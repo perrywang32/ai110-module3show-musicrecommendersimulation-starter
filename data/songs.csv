@@ -9,3 +9,17 @@ id,title,artist,genre,mood,energy,tempo_bpm,valence,danceability,acousticness
 8,Night Drive Loop,Neon Echo,synthwave,moody,0.75,110,0.49,0.73,0.22
 9,Focus Flow,LoRoom,lofi,focused,0.40,80,0.59,0.60,0.78
 10,Rooftop Lights,Indigo Parade,indie pop,happy,0.76,124,0.81,0.82,0.35
+11,Concrete Jungle,Rhyme Theory,hip-hop,confident,0.68,95,0.55,0.84,0.08
+12,Neon Warehouse,Pulse Divide,edm,energetic,0.95,128,0.72,0.90,0.02
+13,Velvet Letters,Aria Moon,r&b,romantic,0.45,68,0.62,0.55,0.30
+14,Iron Verdict,Ashfall,metal,angry,0.98,168,0.22,0.35,0.01
+15,Dust and Highway,Clay Harmon,country,nostalgic,0.52,100,0.58,0.50,0.68
+16,Chamber of Rain,The Chamber Set,classical,melancholic,0.25,66,0.30,0.15,0.97
+17,Island Time,Sunny Tide,reggae,uplifting,0.58,92,0.88,0.72,0.40
+18,Basement Groove,Funk Factory,funk,playful,0.80,112,0.83,0.91,0.12
+19,Circuit Breaker,Tempo Fault,drum and bass,tense,0.90,174,0.40,0.78,0.03
+20,Paper Boats,Hazel Grove,folk,dreamy,0.33,84,0.66,0.44,0.91
+21,Detonate,ISOKNOCK,edm,intense,0.96,150,0.42,0.82,0.02
+22,Afterglow Skies,Illenium,edm,uplifting,0.78,144,0.55,0.55,0.28
+23,Skyline Anthem,Martin Garrix,edm,energetic,0.92,128,0.68,0.88,0.04
+24,Wreckage,Crankdat,edm,intense,0.97,150,0.38,0.78,0.01
