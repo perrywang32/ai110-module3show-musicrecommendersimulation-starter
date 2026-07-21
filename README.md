@@ -58,6 +58,7 @@ This recommender may over-prioritize genre, causing songs from other genres that
    python -m venv .venv
    source .venv/bin/activate      # Mac or Linux
    .venv\Scripts\activate         # Windows
+   ```
 
 2. Install dependencies
 
@@ -144,6 +145,292 @@ For profile -> genre: pop  |  mood: happy  |  energy: 0.8
 ```
 
 **Screenshot or video** *(optional)*: <!-- Insert a screenshot or demo video link here -->
+
+---
+
+## Multi-Profile Testing
+
+To stress-test the scorer beyond the single starter profile, I ran it against
+four deliberately different taste profiles. Each is a plain `user_prefs` dict
+passed to `recommend_songs(prefs, songs, k=5)`. All output below is real
+terminal output captured by running `python run_profiles.py` from the project
+root.
+
+| Profile | `user_prefs` | Why it's useful for testing |
+|---|---|---|
+| **High-energy EDM** | `{"genre": "edm", "mood": "energetic", "target_energy": 0.95, "likes_acoustic": False}` | A "happy path" where every signal agrees. Confirms genre + mood + high energy + non-acoustic all stack to push true EDM tracks to the top. |
+| **Chill lo-fi** | `{"genre": "lofi", "mood": "chill", "target_energy": 0.35, "likes_acoustic": True}` | The opposite end of the energy/acoustic spectrum. Verifies the energy-*closeness* and acousticness terms reward calm, acoustic songs rather than loud ones — i.e. the scorer isn't secretly biased toward high energy. |
+| **Rock / intense** | `{"genre": "rock", "mood": "intense", "target_energy": 0.90, "likes_acoustic": False}` | High-energy but *non-electronic*. Checks that the scorer separates rock from EDM even though both are loud and fast, and shows how a small genre catalog (one rock song) affects ranking. |
+| **Adversarial / conflicting** | `{"genre": "metal", "mood": "chill", "target_energy": 0.10, "likes_acoustic": True}` | An edge case where every signal fights the others: the favorite genre (metal) is loud, fast, and non-acoustic, yet the user asks for a chill mood, near-zero energy, and acoustic songs. Designed to expose weaknesses in the scoring logic. |
+
+### Profile 1 — High-energy EDM
+
+```
+############################################################
+#  PROFILE: High-energy EDM
+############################################################
+
+============================================================
+  TOP MUSIC RECOMMENDATIONS
+============================================================
+For profile -> genre: edm  |  mood: energetic  |  target_energy: 0.95  |  likes_acoustic: False
+============================================================
+
+  #1  Neon Warehouse
+      Artist : Pulse Divide
+      Score  : 7.98
+      Reasons:
+        - Genre 'edm' matches your favorite (+3.0)
+        - Mood 'energetic' matches your favorite (+2.0)
+        - Energy 0.95 vs target 0.95 (+2.00)
+        - Acousticness 0.02 (you prefer non-acoustic) (+0.98)
+------------------------------------------------------------
+
+  #2  Skyline Anthem
+      Artist : Martin Garrix
+      Score  : 7.90
+      Reasons:
+        - Genre 'edm' matches your favorite (+3.0)
+        - Mood 'energetic' matches your favorite (+2.0)
+        - Energy 0.92 vs target 0.95 (+1.94)
+        - Acousticness 0.04 (you prefer non-acoustic) (+0.96)
+------------------------------------------------------------
+
+  #3  Detonate
+      Artist : ISOKNOCK
+      Score  : 5.96
+      Reasons:
+        - Genre 'edm' matches your favorite (+3.0)
+        - Mood 'intense' is not your favorite 'energetic' (+0.0)
+        - Energy 0.96 vs target 0.95 (+1.98)
+        - Acousticness 0.02 (you prefer non-acoustic) (+0.98)
+------------------------------------------------------------
+
+  #4  Wreckage
+      Artist : Crankdat
+      Score  : 5.95
+      Reasons:
+        - Genre 'edm' matches your favorite (+3.0)
+        - Mood 'intense' is not your favorite 'energetic' (+0.0)
+        - Energy 0.97 vs target 0.95 (+1.96)
+        - Acousticness 0.01 (you prefer non-acoustic) (+0.99)
+------------------------------------------------------------
+
+  #5  Afterglow Skies
+      Artist : Illenium
+      Score  : 5.38
+      Reasons:
+        - Genre 'edm' matches your favorite (+3.0)
+        - Mood 'uplifting' is not your favorite 'energetic' (+0.0)
+        - Energy 0.78 vs target 0.95 (+1.66)
+        - Acousticness 0.28 (you prefer non-acoustic) (+0.72)
+------------------------------------------------------------
+```
+
+**What it shows:** the two songs where *all four* signals agree (`Neon Warehouse`, `Skyline Anthem`) score ~7.9 and clearly lead. Below them, the three intense/uplifting EDM tracks lose the +2.0 mood bonus and cluster around 5.4–6.0 — exactly the intended stacking behavior.
+
+### Profile 2 — Chill lo-fi
+
+```
+############################################################
+#  PROFILE: Chill lo-fi
+############################################################
+
+============================================================
+  TOP MUSIC RECOMMENDATIONS
+============================================================
+For profile -> genre: lofi  |  mood: chill  |  target_energy: 0.35  |  likes_acoustic: True
+============================================================
+
+  #1  Library Rain
+      Artist : Paper Lanterns
+      Score  : 7.86
+      Reasons:
+        - Genre 'lofi' matches your favorite (+3.0)
+        - Mood 'chill' matches your favorite (+2.0)
+        - Energy 0.35 vs target 0.35 (+2.00)
+        - Acousticness 0.86 (you like acoustic) (+0.86)
+------------------------------------------------------------
+
+  #2  Midnight Coding
+      Artist : LoRoom
+      Score  : 7.57
+      Reasons:
+        - Genre 'lofi' matches your favorite (+3.0)
+        - Mood 'chill' matches your favorite (+2.0)
+        - Energy 0.42 vs target 0.35 (+1.86)
+        - Acousticness 0.71 (you like acoustic) (+0.71)
+------------------------------------------------------------
+
+  #3  Focus Flow
+      Artist : LoRoom
+      Score  : 5.68
+      Reasons:
+        - Genre 'lofi' matches your favorite (+3.0)
+        - Mood 'focused' is not your favorite 'chill' (+0.0)
+        - Energy 0.40 vs target 0.35 (+1.90)
+        - Acousticness 0.78 (you like acoustic) (+0.78)
+------------------------------------------------------------
+
+  #4  Spacewalk Thoughts
+      Artist : Orbit Bloom
+      Score  : 4.78
+      Reasons:
+        - Genre 'ambient' is not your favorite 'lofi' (+0.0)
+        - Mood 'chill' matches your favorite (+2.0)
+        - Energy 0.28 vs target 0.35 (+1.86)
+        - Acousticness 0.92 (you like acoustic) (+0.92)
+------------------------------------------------------------
+
+  #5  Paper Boats
+      Artist : Hazel Grove
+      Score  : 2.87
+      Reasons:
+        - Genre 'folk' is not your favorite 'lofi' (+0.0)
+        - Mood 'dreamy' is not your favorite 'chill' (+0.0)
+        - Energy 0.33 vs target 0.35 (+1.96)
+        - Acousticness 0.91 (you like acoustic) (+0.91)
+------------------------------------------------------------
+```
+
+**What it shows:** with a *low* target energy, calm songs earn the full energy bonus and loud EDM tracks fall away entirely. This is the key check that the energy term rewards **closeness**, not magnitude. Note `Spacewalk Thoughts` (ambient) cracks the top 5 on mood + energy + acousticness alone, despite scoring 0 on genre — good evidence the non-genre signals actually matter.
+
+### Profile 3 — Rock / intense
+
+```
+############################################################
+#  PROFILE: Rock / intense
+############################################################
+
+============================================================
+  TOP MUSIC RECOMMENDATIONS
+============================================================
+For profile -> genre: rock  |  mood: intense  |  target_energy: 0.9  |  likes_acoustic: False
+============================================================
+
+  #1  Storm Runner
+      Artist : Voltline
+      Score  : 7.88
+      Reasons:
+        - Genre 'rock' matches your favorite (+3.0)
+        - Mood 'intense' matches your favorite (+2.0)
+        - Energy 0.91 vs target 0.90 (+1.98)
+        - Acousticness 0.10 (you prefer non-acoustic) (+0.90)
+------------------------------------------------------------
+
+  #2  Gym Hero
+      Artist : Max Pulse
+      Score  : 4.89
+      Reasons:
+        - Genre 'pop' is not your favorite 'rock' (+0.0)
+        - Mood 'intense' matches your favorite (+2.0)
+        - Energy 0.93 vs target 0.90 (+1.94)
+        - Acousticness 0.05 (you prefer non-acoustic) (+0.95)
+------------------------------------------------------------
+
+  #3  Detonate
+      Artist : ISOKNOCK
+      Score  : 4.86
+      Reasons:
+        - Genre 'edm' is not your favorite 'rock' (+0.0)
+        - Mood 'intense' matches your favorite (+2.0)
+        - Energy 0.96 vs target 0.90 (+1.88)
+        - Acousticness 0.02 (you prefer non-acoustic) (+0.98)
+------------------------------------------------------------
+
+  #4  Wreckage
+      Artist : Crankdat
+      Score  : 4.85
+      Reasons:
+        - Genre 'edm' is not your favorite 'rock' (+0.0)
+        - Mood 'intense' matches your favorite (+2.0)
+        - Energy 0.97 vs target 0.90 (+1.86)
+        - Acousticness 0.01 (you prefer non-acoustic) (+0.99)
+------------------------------------------------------------
+
+  #5  Circuit Breaker
+      Artist : Tempo Fault
+      Score  : 2.97
+      Reasons:
+        - Genre 'drum and bass' is not your favorite 'rock' (+0.0)
+        - Mood 'tense' is not your favorite 'intense' (+0.0)
+        - Energy 0.90 vs target 0.90 (+2.00)
+        - Acousticness 0.03 (you prefer non-acoustic) (+0.97)
+------------------------------------------------------------
+```
+
+**What it shows:** the one true rock song (`Storm Runner`) wins decisively at 7.88. But because the catalog holds only a single rock track, positions #2–#5 fill with high-energy, intense, non-acoustic songs from *other* genres (pop, EDM, drum & bass). This is a realistic small-catalog limitation: the +3.0 genre gap is large enough that no non-rock song can catch `Storm Runner`, but the remaining slots are decided almost entirely by mood and energy.
+
+### Profile 4 — Adversarial / conflicting (edge case)
+
+```
+############################################################
+#  PROFILE: Adversarial / conflicting
+############################################################
+
+============================================================
+  TOP MUSIC RECOMMENDATIONS
+============================================================
+For profile -> genre: metal  |  mood: chill  |  target_energy: 0.1  |  likes_acoustic: True
+============================================================
+
+  #1  Spacewalk Thoughts
+      Artist : Orbit Bloom
+      Score  : 4.56
+      Reasons:
+        - Genre 'ambient' is not your favorite 'metal' (+0.0)
+        - Mood 'chill' matches your favorite (+2.0)
+        - Energy 0.28 vs target 0.10 (+1.64)
+        - Acousticness 0.92 (you like acoustic) (+0.92)
+------------------------------------------------------------
+
+  #2  Library Rain
+      Artist : Paper Lanterns
+      Score  : 4.36
+      Reasons:
+        - Genre 'lofi' is not your favorite 'metal' (+0.0)
+        - Mood 'chill' matches your favorite (+2.0)
+        - Energy 0.35 vs target 0.10 (+1.50)
+        - Acousticness 0.86 (you like acoustic) (+0.86)
+------------------------------------------------------------
+
+  #3  Midnight Coding
+      Artist : LoRoom
+      Score  : 4.07
+      Reasons:
+        - Genre 'lofi' is not your favorite 'metal' (+0.0)
+        - Mood 'chill' matches your favorite (+2.0)
+        - Energy 0.42 vs target 0.10 (+1.36)
+        - Acousticness 0.71 (you like acoustic) (+0.71)
+------------------------------------------------------------
+
+  #4  Iron Verdict
+      Artist : Ashfall
+      Score  : 3.25
+      Reasons:
+        - Genre 'metal' matches your favorite (+3.0)
+        - Mood 'angry' is not your favorite 'chill' (+0.0)
+        - Energy 0.98 vs target 0.10 (+0.24)
+        - Acousticness 0.01 (you like acoustic) (+0.01)
+------------------------------------------------------------
+
+  #5  Chamber of Rain
+      Artist : The Chamber Set
+      Score  : 2.67
+      Reasons:
+        - Genre 'classical' is not your favorite 'metal' (+0.0)
+        - Mood 'melancholic' is not your favorite 'chill' (+0.0)
+        - Energy 0.25 vs target 0.10 (+1.70)
+        - Acousticness 0.97 (you like acoustic) (+0.97)
+------------------------------------------------------------
+```
+
+**What it shows (the weakness this exposes):** the user's *stated* favorite genre is metal, but the only metal song (`Iron Verdict`) lands at **#4**, *below* three songs that don't match the genre at all. The +3.0 genre bonus isn't enough to overcome the fact that metal is loud (0.98 energy vs 0.10 target → only +0.24) and non-acoustic (+0.01), so it loses ~3.75 points on the other three signals. Meanwhile chill/acoustic songs quietly accumulate ~4.5 points each without ever matching the genre.
+
+This surfaces two real limitations of the additive scoring model:
+
+1. **No signal can veto another.** A profile that is internally contradictory ("I love metal but only want quiet acoustic songs") produces a blended, somewhat incoherent list rather than flagging the contradiction. A production system might weight the explicit favorite genre more heavily, or detect that the request is unsatisfiable.
+2. **The reason strings can read as nonsense.** `Iron Verdict` reports *"Acousticness 0.01 (you like acoustic) (+0.01)"* — technically correct, but it awards (a tiny amount of) credit for "liking acoustic" to one of the least-acoustic songs in the catalog. The explanation logic doesn't distinguish "matched your preference" from "barely earned points despite contradicting it."
 
 ---
 
